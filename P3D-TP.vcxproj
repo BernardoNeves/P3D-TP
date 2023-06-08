@@ -147,12 +147,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Importer.cpp" />
+    <ClCompile Include="Input.cpp" />
     <ClCompile Include="Main.cpp">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">D:\IPCA\2_ano_2_semeste\Programação 3D\P3D-TP\P3D-TP\Libraries\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\IPCA\2_ano_2_semeste\Programação 3D\P3D-TP\P3D-TP\Libraries\include</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Importer.h" />
+    <ClInclude Include="Input.h" />
     <ClInclude Include="Main.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

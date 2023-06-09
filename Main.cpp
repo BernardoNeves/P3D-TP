@@ -7,11 +7,10 @@
 #include<glm/glm.hpp>
 #include<glm/mat4x4.hpp>
 #include<glm/gtc/matrix_transform.hpp>
+#include<glm/gtc/type_ptr.hpp>
 #include"Input.h"
 #include"Importer.h"
 
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 480
@@ -71,6 +70,9 @@ void DrawCube(GLfloat centerPosX, GLfloat centerPosY, GLfloat centerPosZ, GLfloa
 
 int main(void)
 {
+    /*loadOBJ("PoolBalls/Ball1.obj");
+    return 0;*/
+
     GLFWwindow* window;
 
     // Initialize the library

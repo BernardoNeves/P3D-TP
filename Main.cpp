@@ -108,8 +108,6 @@ int main(void)
         const float z = dist(gen);
         ballPositions.emplace_back(x, y, 0.0f);
 
-        /
-
     }
 
     while (!glfwWindowShouldClose(window)) {

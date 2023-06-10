@@ -10,7 +10,7 @@ std::uniform_real_distribution<> dist(0.0f, 0.9f);
 
 GLfloat rotationX = 0.0f;
 GLfloat rotationY = 0.0f;
-GLfloat ZOOM = 1.0f;
+GLfloat ZOOM = 10.0f;
 float xPosBuffer;
 float yPosBuffer;
 

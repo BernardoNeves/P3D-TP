@@ -15,24 +15,27 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Importer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Input.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Main.h">
+    <ClInclude Include="Importer.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Input.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="Importer.h">
+    <ClInclude Include="Main.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="stb_image.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

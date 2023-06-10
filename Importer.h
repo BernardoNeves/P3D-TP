@@ -1,146 +1,132 @@
-#pragma once
+#include <iostream>
+#include <string>
+#include <fstream>
+#include <vector>
+#include <sstream>
+#include <algorithm>
+#include <glm/glm.hpp>
 
-//STD Libs
-#include<iostream>
-#include<string>
-#include<fstream>
-#include<vector>
-#include<sstream>
-#include<algorithm>
-
-#include<GL/glew.h>
-#define GLEW_STATIC
-#include<GLFW/glfw3.h>
-#include<glm/glm.hpp>
-#include<glm/mat4x4.hpp>
-#include<glm/gtc/matrix_transform.hpp>
-#include<glm/gtc/type_ptr.hpp>
-
-struct Vertex
-{
-	glm::vec3 position;
-	glm::vec3 color;
-	glm::vec2 texcoord;
-	glm::vec3 normal;
+struct Material {
+    std::string name;
+    glm::vec3 ambient;
+    glm::vec3 diffuse;
+    glm::vec3 specular;
+    float shininess;
+    std::string textureFile;
 };
 
-static std::vector<Vertex> loadOBJ(const char* file_name)
-{
-	//Vertex portions
-	std::vector<glm::fvec3> vertex_positions;
-	std::vector<glm::fvec2> vertex_texcoords;
-	std::vector<glm::fvec3> vertex_normals;
 
-	//Face vectors
-	std::vector<GLint> vertex_position_indicies;
-	std::vector<GLint> vertex_texcoord_indicies;
-	std::vector<GLint> vertex_normal_indicies;
+struct Vertex {
+    glm::vec3 position;
+    glm::vec3 color;
+    glm::vec2 texcoord;
+    glm::vec3 normal;
+};
 
-	//Vertex array
-	std::vector<Vertex> vertices;
+std::pair<std::vector<Vertex>, std::vector<Material>> loadOBJ(const std::string& objPath) {
+    std::vector<Vertex> vertices;
+    std::vector<Material> materials;
 
-	std::stringstream ss;
-	std::ifstream in_file(file_name);
-	std::string line = "";
-	std::string prefix = "";
-	glm::vec3 temp_vec3;
-	glm::vec2 temp_vec2;
-	GLint temp_glint = 0;
+    std::vector<glm::vec3> positions;
+    std::vector<glm::vec2> texcoords;
+    std::vector<glm::vec3> normals;
 
-	//File open error check
-	if (!in_file.is_open())
-	{
-		throw "ERROR::OBJLOADER::Could not open file.";
-	}
+    std::string mtlFileName;
 
-	//Read one line at a time
-	while (std::getline(in_file, line))
-	{
-		//Get the prefix of the line
-		ss.clear();
-		ss.str(line);
-		ss >> prefix;
+    std::ifstream objFile(objPath);
+    if (!objFile) {
+        std::cerr << "Failed to open OBJ file: " << objPath << std::endl;
+        return std::make_pair(vertices, materials);
+    }
 
-		if (prefix == "#")
-		{
+    std::string line;
+    while (std::getline(objFile, line)) {
+        std::istringstream iss(line);
+        std::string prefix;
+        iss >> prefix;
 
-		}
-		else if (prefix == "o")
-		{
+        if (prefix == "v") {
+            glm::vec3 position;
+            iss >> position.x >> position.y >> position.z;
+            positions.push_back(position);
+        }
+        else if (prefix == "vt") {
+            glm::vec2 texcoord;
+            iss >> texcoord.x >> texcoord.y;
+            texcoords.push_back(texcoord);
+        }
+        else if (prefix == "vn") {
+            glm::vec3 normal;
+            iss >> normal.x >> normal.y >> normal.z;
+            normals.push_back(normal);
+        }
+        else if (prefix == "mtllib") {
+            iss >> mtlFileName;
+        }
+        else if (prefix == "f") {
+            std::string faceToken;
+            while (iss >> faceToken) {
+                std::istringstream faceIss(faceToken);
+                std::string vertexIndexStr, texcoordIndexStr, normalIndexStr;
+                std::getline(faceIss, vertexIndexStr, '/');
+                std::getline(faceIss, texcoordIndexStr, '/');
+                std::getline(faceIss, normalIndexStr, '/');
 
-		}
-		else if (prefix == "s")
-		{
+                int vertexIndex = std::stoi(vertexIndexStr) - 1;
+                int texcoordIndex = std::stoi(texcoordIndexStr) - 1;
+                int normalIndex = std::stoi(normalIndexStr) - 1;
 
-		}
-		else if (prefix == "use_mtl")
-		{
+                Vertex vertex;
+                vertex.position = positions[vertexIndex];
+                vertex.texcoord = texcoords[texcoordIndex];
+                vertex.normal = normals[normalIndex];
 
-		}
-		else if (prefix == "v") //Vertex position
-		{
-			ss >> temp_vec3.x >> temp_vec3.y >> temp_vec3.z;
-			vertex_positions.push_back(temp_vec3);
-		}
-		else if (prefix == "vt")
-		{
-			ss >> temp_vec2.x >> temp_vec2.y;
-			vertex_texcoords.push_back(temp_vec2);
-		}
-		else if (prefix == "vn")
-		{
-			ss >> temp_vec3.x >> temp_vec3.y >> temp_vec3.z;
-			vertex_normals.push_back(temp_vec3);
-		}
-		else if (prefix == "f")
-		{
-			int counter = 0;
-			while (ss >> temp_glint)
-			{
-				//Pushing indices into correct arrays
-				if (counter == 0)
-					vertex_position_indicies.push_back(temp_glint);
-				else if (counter == 1)
-					vertex_texcoord_indicies.push_back(temp_glint);
-				else if (counter == 2)
-					vertex_normal_indicies.push_back(temp_glint);
+                vertices.push_back(vertex);
+            }
+        }
+    }
 
-				//Handling characters
-				if (ss.peek() == '/')
-				{
-					++counter;
-					ss.ignore(1, '/');
-				}
-				else if (ss.peek() == ' ')
-				{
-					++counter;
-					ss.ignore(1, ' ');
-				}
+    // Load materials from MTL file
+    std::string mtlPath = objPath.substr(0, objPath.find_last_of('/')) + "/" + mtlFileName;
+    std::ifstream mtlFile(mtlPath);
+    if (mtlFile) {
+        std::string mtlLine;
+        Material material;
+        while (std::getline(mtlFile, mtlLine)) {
+            std::istringstream mtlIss(mtlLine);
+            std::string mtlPrefix;
+            mtlIss >> mtlPrefix;
 
-				//Reset the counter
-				if (counter > 2)
-					counter = 0;
-			}
-		}
-		//std::cout << line << "\n";
-	}
+            if (mtlPrefix == "newmtl") {
+                if (!material.name.empty()) {
+                    materials.push_back(material);
+                }
+                mtlIss >> material.name;
+            }
+            else if (mtlPrefix == "Ka") {
+                mtlIss >> material.ambient.r >> material.ambient.g >> material.ambient.b;
+            }
+            else if (mtlPrefix == "Kd") {
+                mtlIss >> material.diffuse.r >> material.diffuse.g >> material.diffuse.b;
+            }
+            else if (mtlPrefix == "Ks") {
+                mtlIss >> material.specular.r >> material.specular.g >> material.specular.b;
+            }
+            else if (mtlPrefix == "Ns") {
+                mtlIss >> material.shininess;
+            }
+            else if (mtlPrefix == "map_Kd") {
+                mtlIss >> material.textureFile;
+                material.textureFile = objPath.substr(0, objPath.find_last_of('/')) + "/" + material.textureFile;
+            }
+        }
+        if (!material.name.empty()) {
+            materials.push_back(material);
+        }
+    }
+    else {
+        std::cerr << "Failed to open MTL file: " << mtlPath << std::endl;
+    }
 
-	//Build final vertex array (mesh)
-	vertices.resize(vertex_position_indicies.size(), Vertex());
-
-	//Load in all indices
-	for (size_t i = 0; i < vertices.size(); ++i)
-	{
-		vertices[i].position = vertex_positions[vertex_position_indicies[i] - 1];
-		vertices[i].texcoord = vertex_texcoords[vertex_texcoord_indicies[i] - 1];
-		vertices[i].normal = vertex_normals[vertex_normal_indicies[i] - 1];
-		vertices[i].color = glm::vec3(1.f, 1.f, 1.f);
-	}
-
-	//DEBUG
-	std::cout << "Nr of vertices: " << vertices.size() << "\n";
-
-	//Loaded success
-	std::cout << "OBJ file loaded!" << "\n";
-	return vertices;
+    return std::make_pair(vertices, materials);
 }

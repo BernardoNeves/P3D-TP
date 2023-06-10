@@ -1,158 +1,178 @@
-﻿#include<iostream>
-#include<vector>
+﻿#include <iostream>
+#include <vector>
 
-#include<GL/glew.h>
 #define GLEW_STATIC
-#include<GLFW/glfw3.h>
-#include<glm/glm.hpp>
-#include<glm/mat4x4.hpp>
-#include<glm/gtc/matrix_transform.hpp>
-#include<glm/gtc/type_ptr.hpp>
-#include"Input.h"
-#include"Importer.h"
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/mat4x4.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include "Input.h"
+#include "Importer.h"
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
+#define SCREEN_WIDTH 1280
+#define SCREEN_HEIGHT 720
+#include <random>
 
 
-#define SCREEN_WIDTH 640
-#define SCREEN_HEIGHT 480
-
-void DrawCube(GLfloat centerPosX, GLfloat centerPosY, GLfloat centerPosZ, GLfloat edgeLength)
+void RenderObject(const std::vector<Vertex>& object, const std::vector<Material>& materials)
 {
-    GLfloat halfSideLength = edgeLength * 0.5f;
+    // Iterate over the vertices of the object
+    glBegin(GL_TRIANGLES);
+    for (const Vertex& vertex : object) {
+        // Set the position of the vertex
+        glPushMatrix();
 
-    GLfloat vertices[] =
-    {
-        // front face
-        centerPosX - halfSideLength, centerPosY + halfSideLength, centerPosZ + halfSideLength, // top left
-        centerPosX + halfSideLength, centerPosY + halfSideLength, centerPosZ + halfSideLength, // top right
-        centerPosX + halfSideLength, centerPosY - halfSideLength, centerPosZ + halfSideLength, // bottom right
-        centerPosX - halfSideLength, centerPosY - halfSideLength, centerPosZ + halfSideLength, // bottom left
+        // Set the color of the vertex
+        glColor3f(1, 1, 1);
 
-        // back face
-        centerPosX - halfSideLength, centerPosY + halfSideLength, centerPosZ - halfSideLength, // top left
-        centerPosX + halfSideLength, centerPosY + halfSideLength, centerPosZ - halfSideLength, // top right
-        centerPosX + halfSideLength, centerPosY - halfSideLength, centerPosZ - halfSideLength, // bottom right
-        centerPosX - halfSideLength, centerPosY - halfSideLength, centerPosZ - halfSideLength, // bottom left
+        // Set the normal of the vertex
+        glNormal3f(vertex.normal.x, vertex.normal.y, vertex.normal.z);
 
-        // left face
-        centerPosX - halfSideLength, centerPosY + halfSideLength, centerPosZ + halfSideLength, // top left
-        centerPosX - halfSideLength, centerPosY + halfSideLength, centerPosZ - halfSideLength, // top right
-        centerPosX - halfSideLength, centerPosY - halfSideLength, centerPosZ - halfSideLength, // bottom right
-        centerPosX - halfSideLength, centerPosY - halfSideLength, centerPosZ + halfSideLength, // bottom left
+        // Set the texture coordinates of the vertex
+        glTexCoord2f(vertex.texcoord.x, vertex.texcoord.y);
 
-        // right face
-        centerPosX + halfSideLength, centerPosY + halfSideLength, centerPosZ + halfSideLength, // top left
-        centerPosX + halfSideLength, centerPosY + halfSideLength, centerPosZ - halfSideLength, // top right
-        centerPosX + halfSideLength, centerPosY - halfSideLength, centerPosZ - halfSideLength, // bottom right
-        centerPosX + halfSideLength, centerPosY - halfSideLength, centerPosZ + halfSideLength, // bottom left
+        // Draw the vertex
+        glVertex3f(vertex.position.x, vertex.position.y, vertex.position.z);
 
-        // top face
-        centerPosX - halfSideLength, centerPosY + halfSideLength, centerPosZ + halfSideLength, // top left
-        centerPosX - halfSideLength, centerPosY + halfSideLength, centerPosZ - halfSideLength, // top right
-        centerPosX + halfSideLength, centerPosY + halfSideLength, centerPosZ - halfSideLength, // bottom right
-        centerPosX + halfSideLength, centerPosY + halfSideLength, centerPosZ + halfSideLength, // bottom left
-
-        // top face
-        centerPosX - halfSideLength, centerPosY - halfSideLength, centerPosZ + halfSideLength, // top left
-        centerPosX - halfSideLength, centerPosY - halfSideLength, centerPosZ - halfSideLength, // top right
-        centerPosX + halfSideLength, centerPosY - halfSideLength, centerPosZ - halfSideLength, // bottom right
-        centerPosX + halfSideLength, centerPosY - halfSideLength, centerPosZ + halfSideLength  // bottom left
-    };
-
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    //glColor3f( colour[0], colour[1], colour[2] );
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glVertexPointer(3, GL_FLOAT, 0, vertices);
-
-    glDrawArrays(GL_QUADS, 0, 24);
-
-    glDisableClientState(GL_VERTEX_ARRAY);
+        glPopMatrix();
+    }
+    glEnd();
 }
+
+
 
 int main(void)
 {
-    /*loadOBJ("PoolBalls/Ball1.obj");
-    return 0;*/
-
+    std::vector<std::pair<std::vector<Vertex>, std::vector<Material>>> objDataList;
+    for (size_t i = 1; i < 16; ++i) {
+        objDataList.push_back(loadOBJ("PoolBalls/Ball" + std::to_string(i) + ".obj"));
+    }
     GLFWwindow* window;
 
-    // Initialize the library
-    if (!glfwInit())
-    {
+    if (!glfwInit()) {
         return -1;
     }
 
-    // Create a windowed mode window and its OpenGL context
-    window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Error 404", NULL, NULL);
+    window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Window", NULL, NULL);
     if (window == NULL) {
         glfwTerminate();
         return -1;
     }
 
     glfwSetCursorPosCallback(window, cursorPositionCallback);
-
     glfwSetKeyCallback(window, keyCallback);
     glfwSetInputMode(window, GLFW_STICKY_KEYS, 1);
-
     glfwSetCursorEnterCallback(window, cursorEnterCallback);
-
     glfwSetMouseButtonCallback(window, mouseButtonCallback);
-
     glfwSetScrollCallback(window, scrollCallback);
 
     int screenWidth, screenHeight;
     glfwGetFramebufferSize(window, &screenWidth, &screenHeight);
 
-    if (!window)
-    {
+    if (!window) {
         glfwTerminate();
         return -1;
     }
 
-    // Make the window's context current
     glfwMakeContextCurrent(window);
 
-    glViewport(0.0f, 0.0f, screenWidth, screenHeight); // specifies the part of the window to which OpenGL will draw (in pixels), convert from normalised to pixels
-    glMatrixMode(GL_PROJECTION); // projection matrix defines the properties of the camera that views the objects in the world coordinate frame. Here you typically set the zoom factor, aspect ratio and the near and far clipping planes
-    glLoadIdentity(); // replace the current matrix with the identity matrix and starts us a fresh because matrix transforms such as glOrpho and glRotate cumulate, basically puts us at (0, 0, 0)
-    glOrtho(0, SCREEN_WIDTH, 0, SCREEN_HEIGHT, 0, 1000); // essentially set coordinate system
-    glMatrixMode(GL_MODELVIEW); // (default matrix mode) modelview matrix defines how your objects are transformed (meaning translation, rotation and scaling) in your world
-    glLoadIdentity(); // same as above comment
+    // Initialize GLEW
+    if (glewInit() != GLEW_OK) {
+        std::cerr << "Failed to initialize GLEW" << std::endl;
+        glfwTerminate();
+        return -1;
+    }
 
-    GLfloat halfScreenWidth = SCREEN_WIDTH / 2;
-    GLfloat halfScreenHeight = SCREEN_HEIGHT / 2;
-    glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
+    glViewport(0, 0, screenWidth, screenHeight);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0, screenWidth, 0, screenHeight, 0, 1000);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    std::vector<glm::vec3> ballPositions;
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<float> dist(-10.0f, 10.0f);  // Adjust the range of random values as needed
 
-    double xPos = 0, yPos = 0;
+    for (size_t i = 0; i < objDataList.size(); ++i) {
+        const float x = dist(gen);
+        const float y = dist(gen);
+        const float z = dist(gen);
+        ballPositions.emplace_back(x, y, 0.0f);
 
-    // Loop until the user closes the window
-    while (!glfwWindowShouldClose(window))
-    {
+        /
+
+    }
+
+    while (!glfwWindowShouldClose(window)) {
+        glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-
-        // Render OpenGL here
-        glfwGetCursorPos(window, &xPos, &yPos);
-
         glPushMatrix();
-        glTranslatef(halfScreenWidth, halfScreenHeight, -500);
-        glRotatef(rotationX, 0, 1, 0);
-        glScalef(ZOOM, ZOOM, ZOOM);
-        glRotatef(rotationY, 1, 0, 0);
-        glTranslatef(-halfScreenWidth, -halfScreenHeight, 500);
+        glTranslatef(screenWidth / 2, screenHeight / 2, 0); // Move the object to the center of the screen
+        glScalef(ZOOM, ZOOM, ZOOM); // Apply zoom
+        //glRotatef(rotationX, 0, 1, 0);
+        //glRotatef(rotationY, 1, 0, 0);
 
-        DrawCube(halfScreenWidth, halfScreenHeight, -500, 200);
+        
 
+        for (size_t i = 0; i < objDataList.size(); ++i) {
+            const auto& objData = objDataList[i];
+            const glm::vec3& startPosition = ballPositions[i];
+            glTranslatef(startPosition.x, startPosition.y, startPosition.z);
+            for (const Material& material : objData.second) {
+                // Load texture image
+                int width, height, channels;
+                unsigned char* image = stbi_load(material.textureFile.c_str(), &width, &height, &channels, 0);
+                if (!image) {
+                    std::cerr << "Failed to load texture image: " << material.textureFile << std::endl;
+                    continue;
+                }
+
+                // Generate texture ID
+                GLuint textureID;
+                glGenTextures(1, &textureID);
+
+                // Bind the texture
+                glBindTexture(GL_TEXTURE_2D, textureID);
+
+                // Set the texture parameters
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+                // Load the texture image data
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+
+                // Enable texture mapping
+                glEnable(GL_TEXTURE_2D);
+
+                // Bind the texture to the object
+                glBindTexture(GL_TEXTURE_2D, textureID);
+
+                // Render the object with the texture
+                RenderObject(objData.first, objData.second);
+
+                // Free the image data
+                stbi_image_free(image);
+            }
+        }
         glPopMatrix();
 
-
-        // Swap front and back buffers
         glfwSwapBuffers(window);
 
-        // Poll for and process events
         glfwPollEvents();
     }
 
     glfwTerminate();
-
     return 0;
 }

@@ -1,10 +1,12 @@
 #include <iostream>
-#include <string>
 #include <fstream>
-#include <vector>
 #include <sstream>
+#include <vector>
+#include <string>
 #include <algorithm>
 #include <glm/glm.hpp>
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 struct Material {
     std::string name;
@@ -13,8 +15,8 @@ struct Material {
     glm::vec3 specular;
     float shininess;
     std::string textureFile;
+    GLuint textureID;
 };
-
 
 struct Vertex {
     glm::vec3 position;
@@ -23,9 +25,50 @@ struct Vertex {
     glm::vec3 normal;
 };
 
-std::pair<std::vector<Vertex>, std::vector<Material>> loadOBJ(const std::string& objPath) {
+void LoadTextures(std::pair<std::vector<Vertex>, Material>& objDataList)
+{
+    //for (auto& objData : objDataList) {
+        std::pair<std::vector<Vertex>, Material>& objData = objDataList;
+        Material& material = objData.second;
+        // Load texture image
+        int width, height, channels;
+        unsigned char* image = stbi_load(material.textureFile.c_str(), &width, &height, &channels, 0);
+        if (!image) {
+            std::cerr << "Failed to load texture image: " << material.textureFile << std::endl;
+            return;
+        }
+
+        // Generate texture ID
+        GLuint textureID;
+        glGenTextures(1, &textureID);
+
+        // Bind the texture
+        glBindTexture(GL_TEXTURE_2D, textureID);
+
+        // Set the texture parameters
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        // Load the texture image data
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+
+        // Enable texture mapping
+        glEnable(GL_TEXTURE_2D);
+
+        // Bind the texture to the object
+        material.textureID = textureID;
+
+        // Free the image data
+        stbi_image_free(image);
+        
+    //}
+}
+
+std::pair<std::vector<Vertex>, Material> Read(const std::string& obj_model_filepath) {
     std::vector<Vertex> vertices;
-    std::vector<Material> materials;
+    Material material;
 
     std::vector<glm::vec3> positions;
     std::vector<glm::vec2> texcoords;
@@ -33,10 +76,10 @@ std::pair<std::vector<Vertex>, std::vector<Material>> loadOBJ(const std::string&
 
     std::string mtlFileName;
 
-    std::ifstream objFile(objPath);
+    std::ifstream objFile(obj_model_filepath);
     if (!objFile) {
-        std::cerr << "Failed to open OBJ file: " << objPath << std::endl;
-        return std::make_pair(vertices, materials);
+        std::cerr << "Failed to open OBJ file: " << obj_model_filepath << std::endl;
+        return std::make_pair(vertices, material);
     }
 
     std::string line;
@@ -66,41 +109,32 @@ std::pair<std::vector<Vertex>, std::vector<Material>> loadOBJ(const std::string&
         else if (prefix == "f") {
             std::string faceToken;
             while (iss >> faceToken) {
+                std::replace(faceToken.begin(), faceToken.end(), '/', ' ');
                 std::istringstream faceIss(faceToken);
-                std::string vertexIndexStr, texcoordIndexStr, normalIndexStr;
-                std::getline(faceIss, vertexIndexStr, '/');
-                std::getline(faceIss, texcoordIndexStr, '/');
-                std::getline(faceIss, normalIndexStr, '/');
-
-                int vertexIndex = std::stoi(vertexIndexStr) - 1;
-                int texcoordIndex = std::stoi(texcoordIndexStr) - 1;
-                int normalIndex = std::stoi(normalIndexStr) - 1;
+                int vertexIndex, texcoordIndex, normalIndex;
+                faceIss >> vertexIndex >> texcoordIndex >> normalIndex;
 
                 Vertex vertex;
-                vertex.position = positions[vertexIndex];
-                vertex.texcoord = texcoords[texcoordIndex];
-                vertex.normal = normals[normalIndex];
-
+                vertex.position = positions[vertexIndex - 1];
+                vertex.texcoord = texcoords[texcoordIndex - 1];
+                vertex.normal = normals[normalIndex - 1];
                 vertices.push_back(vertex);
             }
         }
     }
 
     // Load materials from MTL file
-    std::string mtlPath = objPath.substr(0, objPath.find_last_of('/')) + "/" + mtlFileName;
+    std::string mtlPath = obj_model_filepath.substr(0, obj_model_filepath.find_last_of('/')) + "/" + mtlFileName;
     std::ifstream mtlFile(mtlPath);
     if (mtlFile) {
+        //Material material;
         std::string mtlLine;
-        Material material;
         while (std::getline(mtlFile, mtlLine)) {
             std::istringstream mtlIss(mtlLine);
             std::string mtlPrefix;
             mtlIss >> mtlPrefix;
 
             if (mtlPrefix == "newmtl") {
-                if (!material.name.empty()) {
-                    materials.push_back(material);
-                }
                 mtlIss >> material.name;
             }
             else if (mtlPrefix == "Ka") {
@@ -117,16 +151,54 @@ std::pair<std::vector<Vertex>, std::vector<Material>> loadOBJ(const std::string&
             }
             else if (mtlPrefix == "map_Kd") {
                 mtlIss >> material.textureFile;
-                material.textureFile = objPath.substr(0, objPath.find_last_of('/')) + "/" + material.textureFile;
+                material.textureFile = obj_model_filepath.substr(0, obj_model_filepath.find_last_of('/')) + "/" + material.textureFile;
             }
-        }
-        if (!material.name.empty()) {
-            materials.push_back(material);
         }
     }
     else {
         std::cerr << "Failed to open MTL file: " << mtlPath << std::endl;
     }
 
-    return std::make_pair(vertices, materials);
+    // Load textures
+    std::pair<std::vector<Vertex>, Material> objDataList;
+    objDataList = (std::make_pair(vertices, material));
+    LoadTextures(objDataList);
+
+    return objDataList;
+}
+
+
+void RenderBalls(glm::vec3 position, glm::vec3 orientation, const std::pair<std::vector<Vertex>, Material>& objData) {
+    // Set the position and orientation of the object
+    glPushMatrix();
+    glTranslatef(position.x, position.y, position.z);
+    glRotatef(orientation.x, 1.0f, 0.0f, 0.0f);
+    glRotatef(orientation.y, 0.0f, 1.0f, 0.0f);
+    glRotatef(orientation.z, 0.0f, 0.0f, 1.0f);
+
+    const std::vector<Vertex>& vertices = objData.first;
+    const Material material = objData.second;
+
+    // Bind the texture to the object
+    glBindTexture(GL_TEXTURE_2D, material.textureID);
+    glMaterialfv(GL_FRONT, GL_AMBIENT, glm::value_ptr(glm::vec4(material.ambient, 1.0f)));
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, glm::value_ptr(glm::vec4(material.diffuse, 1.0f)));
+    glMaterialfv(GL_FRONT, GL_SPECULAR, glm::value_ptr(glm::vec4(material.specular, 1.0f)));
+    glMaterialf(GL_FRONT, GL_SHININESS, material.shininess);
+
+
+    glBegin(GL_TRIANGLES);
+    // Iterate over the vertices of the object
+    for (const Vertex& vertex : vertices) {
+        // Set the normal of the vertex
+        glNormal3f(vertex.normal.x, vertex.normal.y, vertex.normal.z);
+
+        // Set the texture coordinates of the vertex
+        glTexCoord2f(vertex.texcoord.x, 1 - vertex.texcoord.y);
+
+        // Draw the vertex
+        glVertex3f(vertex.position.x, vertex.position.y, vertex.position.z);
+    }
+    glEnd();
+    glPopMatrix();
 }

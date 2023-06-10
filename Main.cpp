@@ -11,47 +11,162 @@
 #include "Input.h"
 #include "Importer.h"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+//#define STB_IMAGE_IMPLEMENTATION
+//#include "stb_image.h"
 
 #define SCREEN_WIDTH 1280
 #define SCREEN_HEIGHT 720
 #include <random>
 
+size_t movingBallIndex = 0;  // Índice da bola em movimento na lista de posições das bolas
+glm::vec3 movingBallPosition;  // Posição atual da bola em movimento
+glm::vec3 movingBallDirection;  // Direção do movimento da bola em movimento
+float movingBallSpeed = 0.25f;  // Velocidade de movimento da bola em movimento
 
-void RenderObject(const std::vector<Vertex>& object, const std::vector<Material>& materials)
+
+void RenderPoolTable(float length, float height, float depth, const glm::vec3& position)
 {
-    // Iterate over the vertices of the object
-    glBegin(GL_TRIANGLES);
-    for (const Vertex& vertex : object) {
-        // Set the position of the vertex
-        glPushMatrix();
+    // Material properties for the table
+    GLfloat tableAmbient[] = { 0.0f, 0.05f, 0.0f, 1.0f };  // Dark green ambient color
+    GLfloat tableDiffuse[] = { 0.1f, 0.2f, 0.1f, 1.0f };   // Dark green diffuse color
+    GLfloat tableSpecular[] = { 0.04f, 0.1f, 0.04f, 1.0f }; // Dark green specular color
+    GLfloat tableShininess = 0.078125f;                    // Adjust the shininess to control the reflection
 
-        // Set the color of the vertex
-        glColor3f(1, 1, 1);
+    //// Set the material properties
+    glMaterialfv(GL_FRONT, GL_AMBIENT, tableAmbient);
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, tableDiffuse);
+    glMaterialfv(GL_FRONT, GL_SPECULAR, tableSpecular);
+    glMaterialf(GL_FRONT, GL_SHININESS, tableShininess);
 
-        // Set the normal of the vertex
-        glNormal3f(vertex.normal.x, vertex.normal.y, vertex.normal.z);
+    // Calculate half dimensions for convenience
+    float halfLength = length / 2.0f;
+    float halfHeight = height / 2.0f;
+    float halfDepth = depth / 2.0f;
 
-        // Set the texture coordinates of the vertex
-        glTexCoord2f(vertex.texcoord.x, vertex.texcoord.y);
+    // Render the table as a cube
+    glBegin(GL_QUADS);
 
-        // Draw the vertex
-        glVertex3f(vertex.position.x, vertex.position.y, vertex.position.z);
+    // Front face
+    glVertex3f(-halfLength, -halfHeight, -halfDepth);
+    glVertex3f(-halfLength, halfHeight, -halfDepth);
+    glVertex3f(halfLength, halfHeight, -halfDepth);
+    glVertex3f(halfLength, -halfHeight, -halfDepth);
 
-        glPopMatrix();
-    }
+    // Back face
+    glVertex3f(-halfLength, -halfHeight, halfDepth);
+    glVertex3f(-halfLength, halfHeight, halfDepth);
+    glVertex3f(halfLength, halfHeight, halfDepth);
+    glVertex3f(halfLength, -halfHeight, halfDepth);
+
+    // Left face
+    glVertex3f(-halfLength, -halfHeight, -halfDepth);
+    glVertex3f(-halfLength, halfHeight, -halfDepth);
+    glVertex3f(-halfLength, halfHeight, halfDepth);
+    glVertex3f(-halfLength, -halfHeight, halfDepth);
+
+
+    glVertex3f(halfLength, -halfHeight, -halfDepth);
+    glVertex3f(halfLength, halfHeight, -halfDepth);
+    glVertex3f(halfLength, halfHeight, halfDepth);
+    glVertex3f(halfLength, -halfHeight, halfDepth);
+
+    // Top face
+    glVertex3f(-halfLength, halfHeight, -halfDepth);
+    glVertex3f(-halfLength, halfHeight, halfDepth);
+    glVertex3f(halfLength, halfHeight, halfDepth);
+    glVertex3f(halfLength, halfHeight, -halfDepth);
+
+    // Bottom face
+    glVertex3f(-halfLength, -halfHeight, -halfDepth);
+    glVertex3f(-halfLength, -halfHeight, halfDepth);
+    glVertex3f(halfLength, -halfHeight, halfDepth);
+    glVertex3f(halfLength, -halfHeight, -halfDepth);
+
     glEnd();
+
+    // Set the initial position of the table
+    glTranslatef(position.x, position.y, position.z);
 }
 
+void RenderLights() {
+    if (ambientLightEnabled) {
+        glEnable(GL_LIGHT0);
 
+        GLfloat ambientColor[] = { 5.0f, 5.0f, 5.0f, 1.0f };
+        glLightfv(GL_LIGHT0, GL_AMBIENT, ambientColor);
+    }
+    else {
+        glDisable(GL_LIGHT0);
+    }
+
+   if (directionalLightEnabled) {
+        glEnable(GL_LIGHT1);
+
+        GLfloat lightDirection[] = { 1.0f, 1.0f, -10.0f, 1.0f };
+        GLfloat diffuseColor[] = { 0.8f, 0.8f, 0.8f, 1.0f };
+        GLfloat specularColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+        glLightfv(GL_LIGHT1, GL_POSITION, lightDirection);
+        glLightfv(GL_LIGHT1, GL_DIFFUSE, diffuseColor);
+        glLightfv(GL_LIGHT1, GL_SPECULAR, specularColor);
+    }
+    else {
+        glDisable(GL_LIGHT1);
+    }
+
+    if (pointLightEnabled) {
+        glEnable(GL_LIGHT2);
+
+        GLfloat lightPosition[] = { 0.0f, 2.0f, -2.0f, 1.0f};
+        GLfloat diffuseColor[] = { 255.0f, 255.0f, 255.0f, 1.0f };
+        GLfloat specularColor[] = { 55.0f, 55.0f, 255.0f, 1.0f };
+        GLfloat constantAttenuation = 1.0f;
+        GLfloat linearAttenuation = 0.0005f;
+        GLfloat quadraticAttenuation = 0.001f;
+
+        glLightfv(GL_LIGHT2, GL_POSITION, lightPosition);
+        glLightfv(GL_LIGHT2, GL_DIFFUSE, diffuseColor);
+        glLightfv(GL_LIGHT2, GL_SPECULAR, specularColor);
+        glLightf(GL_LIGHT2, GL_CONSTANT_ATTENUATION, constantAttenuation);
+        glLightf(GL_LIGHT2, GL_LINEAR_ATTENUATION, linearAttenuation);
+        glLightf(GL_LIGHT2, GL_QUADRATIC_ATTENUATION, quadraticAttenuation);
+    }
+    else {
+        glDisable(GL_LIGHT2);
+    }
+
+   if (spotLightEnabled) {
+        glEnable(GL_LIGHT3);
+
+        GLfloat lightPosition[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+        GLfloat spotDirection[] = { 50.0f, 50.0f, 10.0f };
+        GLfloat diffuseColor[] = { 255.0f, 155.0f, 155.0f, 1.0f };
+        GLfloat specularColor[] = { 255.0f, 0.0f, 0.0f, 1.0f };
+        GLfloat constantAttenuation = 1.0f;
+        GLfloat linearAttenuation = 0.0005f;
+        GLfloat quadraticAttenuation = 0.00001f;
+        GLfloat spotCutoff = 25.0f;
+        GLfloat spotExponent = 10.0f;
+
+        glLightfv(GL_LIGHT3, GL_POSITION, lightPosition);
+        glLightfv(GL_LIGHT3, GL_SPOT_DIRECTION, spotDirection);
+        glLightfv(GL_LIGHT3, GL_DIFFUSE, diffuseColor);
+        glLightfv(GL_LIGHT3, GL_SPECULAR, specularColor);
+        glLightf(GL_LIGHT3, GL_CONSTANT_ATTENUATION, constantAttenuation);
+        glLightf(GL_LIGHT3, GL_LINEAR_ATTENUATION, linearAttenuation);
+        glLightf(GL_LIGHT3, GL_QUADRATIC_ATTENUATION, quadraticAttenuation);
+        glLightf(GL_LIGHT3, GL_SPOT_CUTOFF, spotCutoff);
+        glLightf(GL_LIGHT3, GL_SPOT_EXPONENT, spotExponent);
+    }
+    else {
+        glDisable(GL_LIGHT3);
+    }
+
+}
 
 int main(void)
 {
-    std::vector<std::pair<std::vector<Vertex>, std::vector<Material>>> objDataList;
-    for (size_t i = 1; i < 16; ++i) {
-        objDataList.push_back(loadOBJ("PoolBalls/Ball" + std::to_string(i) + ".obj"));
-    }
+    
     GLFWwindow* window;
 
     if (!glfwInit()) {
@@ -91,17 +206,22 @@ int main(void)
     glViewport(0, 0, screenWidth, screenHeight);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(0, screenWidth, 0, screenHeight, 0, 1000);
+    glOrtho(0, screenWidth, 0, screenHeight, -1000, 1000);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_LIGHTING);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     std::vector<glm::vec3> ballPositions;
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_real_distribution<float> dist(-10.0f, 10.0f);  // Adjust the range of random values as needed
+    std::uniform_real_distribution<float> dist(-20.0f, 20.0f);  // Adjust the range of random values as needed
 
+    std::vector<std::pair<std::vector<Vertex>, Material>> objDataList;
+    for (size_t i = 1; i < 16; ++i) {
+        objDataList.push_back(Read("PoolBalls/Ball" + std::to_string(i) + ".obj"));
+    }
     for (size_t i = 0; i < objDataList.size(); ++i) {
         const float x = dist(gen);
         const float y = dist(gen);
@@ -110,67 +230,70 @@ int main(void)
 
     }
 
+    // Main loop
     while (!glfwWindowShouldClose(window)) {
+        // Clear the color buffer
+        glfwGetFramebufferSize(window, &screenWidth, &screenHeight);
+        glViewport(0, 0, screenWidth, screenHeight);
         glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glPushMatrix();
-        glTranslatef(screenWidth / 2, screenHeight / 2, 0); // Move the object to the center of the screen
-        glScalef(ZOOM, ZOOM, ZOOM); // Apply zoom
-        //glRotatef(rotationX, 0, 1, 0);
-        //glRotatef(rotationY, 1, 0, 0);
+        // Set the transformation matrix
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+        glTranslatef(screenWidth / 2, screenHeight / 2, 0);
+        glScalef(ZOOM, ZOOM, ZOOM);
+        glRotatef(rotationX, 1, 0, 0);
+        glRotatef(rotationY, 0, 0, 1);
 
-        
+        RenderPoolTable(100.0f, 50.0f, 2.5f, glm::vec3(0.0f, 0.0f, 2.25f));
 
+        if (animate) {
+            movingBallIndex = 0;
+            movingBallPosition = ballPositions[movingBallIndex];
+            movingBallDirection = glm::normalize(glm::vec3(-1.0f, -1.0f, 0.0f));
+
+            movingBallPosition += movingBallDirection * movingBallSpeed;
+
+            // Verificar colisão com outras bolas
+            for (size_t i = 0; i < ballPositions.size(); ++i) {
+                if (i != movingBallIndex) {
+                    float distance = glm::distance(movingBallPosition, ballPositions[i]);
+                    if (distance < 2.0f) {  // Raio das bolas é 1.0f
+                        animate = false;
+                        break;
+                    }
+                }
+            }
+
+            // Verificar colisão com os limites da mesa
+            if (movingBallPosition.x < -48.5f || movingBallPosition.x > 48.5f ||
+                movingBallPosition.y < -24.5f || movingBallPosition.y > 24.5f) {
+                animate = false;
+            }
+
+            // Atualizar a posição da bola na lista de posições das bolas
+            ballPositions[movingBallIndex] = movingBallPosition;
+        }
+
+        //Render each ball
         for (size_t i = 0; i < objDataList.size(); ++i) {
             const auto& objData = objDataList[i];
             const glm::vec3& startPosition = ballPositions[i];
-            glTranslatef(startPosition.x, startPosition.y, startPosition.z);
-            for (const Material& material : objData.second) {
-                // Load texture image
-                int width, height, channels;
-                unsigned char* image = stbi_load(material.textureFile.c_str(), &width, &height, &channels, 0);
-                if (!image) {
-                    std::cerr << "Failed to load texture image: " << material.textureFile << std::endl;
-                    continue;
-                }
-
-                // Generate texture ID
-                GLuint textureID;
-                glGenTextures(1, &textureID);
-
-                // Bind the texture
-                glBindTexture(GL_TEXTURE_2D, textureID);
-
-                // Set the texture parameters
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-                // Load the texture image data
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
-
-                // Enable texture mapping
-                glEnable(GL_TEXTURE_2D);
-
-                // Bind the texture to the object
-                glBindTexture(GL_TEXTURE_2D, textureID);
-
-                // Render the object with the texture
-                RenderObject(objData.first, objData.second);
-
-                // Free the image data
-                stbi_image_free(image);
-            }
+            RenderBalls(startPosition, glm::vec3(90, 90, 90), objData);
         }
-        glPopMatrix();
+        
+        RenderLights();
 
+        // Swap the front and back buffers
         glfwSwapBuffers(window);
 
+        // Poll for events
         glfwPollEvents();
     }
 
     glfwTerminate();
     return 0;
 }
+
+

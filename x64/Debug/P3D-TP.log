@@ -1,6 +1,10 @@
-﻿  Main.cpp
-D:\IPCA\2_ano_2_semeste\Programação 3D\P3D-TP\Main.cpp(118,52): warning C4244: 'argument': conversion from 'int' to 'GLfloat', possible loss of data
-D:\IPCA\2_ano_2_semeste\Programação 3D\P3D-TP\Main.cpp(118,34): warning C4244: 'argument': conversion from 'int' to 'GLfloat', possible loss of data
+﻿  Input.cpp
+D:\IPCA\2_ano_2_semeste\Programação 3D\P3D-TP\Input.cpp(39,18): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+D:\IPCA\2_ano_2_semeste\Programação 3D\P3D-TP\Input.cpp(40,18): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+  Main.cpp
+D:\IPCA\2_ano_2_semeste\Programação 3D\P3D-TP\Main.cpp(244,52): warning C4244: 'argument': conversion from 'int' to 'GLfloat', possible loss of data
+D:\IPCA\2_ano_2_semeste\Programação 3D\P3D-TP\Main.cpp(244,34): warning C4244: 'argument': conversion from 'int' to 'GLfloat', possible loss of data
+  Generating Code...
 LINK : warning LNK4098: defaultlib 'LIBCMT' conflicts with use of other libs; use /NODEFAULTLIB:library
 glew32s.lib(glew.obj) : warning LNK4099: PDB 'glew_static.pdb' was not found with 'glew32s.lib(glew.obj)' or at 'D:\IPCA\2_ano_2_semeste\Programaçao 3D\P3D-TP\x64\Debug\glew_static.pdb'; linking object as if no debug info
 glfw3.lib(context.obj) : warning LNK4099: PDB 'glfw3.pdb' was not found with 'glfw3.lib(context.obj)' or at 'D:\IPCA\2_ano_2_semeste\Programaçao 3D\P3D-TP\x64\Debug\glfw3.pdb'; linking object as if no debug info
@@ -13,9 +17,9 @@ glfw3.lib(win32_init.obj) : warning LNK4099: PDB 'glfw3.pdb' was not found with 
 glfw3.lib(win32_joystick.obj) : warning LNK4099: PDB 'glfw3.pdb' was not found with 'glfw3.lib(win32_joystick.obj)' or at 'D:\IPCA\2_ano_2_semeste\Programaçao 3D\P3D-TP\x64\Debug\glfw3.pdb'; linking object as if no debug info
 glfw3.lib(win32_monitor.obj) : warning LNK4099: PDB 'glfw3.pdb' was not found with 'glfw3.lib(win32_monitor.obj)' or at 'D:\IPCA\2_ano_2_semeste\Programaçao 3D\P3D-TP\x64\Debug\glfw3.pdb'; linking object as if no debug info
 glfw3.lib(win32_time.obj) : warning LNK4099: PDB 'glfw3.pdb' was not found with 'glfw3.lib(win32_time.obj)' or at 'D:\IPCA\2_ano_2_semeste\Programaçao 3D\P3D-TP\x64\Debug\glfw3.pdb'; linking object as if no debug info
-glfw3.lib(win32_thread.obj) : warning LNK4099: PDB 'glfw3.pdb' was not found with 'glfw3.lib(win32_thread.obj)' or at 'D:\IPCA\2_ano_2_semeste\Programaçao 3D\P3D-TP\x64\Debug\glfw3.pdb'; linking object as if no debug info
-glfw3.lib(win32_window.obj) : warning LNK4099: PDB 'glfw3.pdb' was not found with 'glfw3.lib(win32_window.obj)' or at 'D:\IPCA\2_ano_2_semeste\Programaçao 3D\P3D-TP\x64\Debug\glfw3.pdb'; linking object as if no debug info
-glfw3.lib(wgl_context.obj) : warning LNK4099: PDB 'glfw3.pdb' was not found with 'glfw3.lib(wgl_context.obj)' or at 'D:\IPCA\2_ano_2_semeste\Programaçao 3D\P3D-TP\x64\Debug\glfw3.pdb'; linking object as if no debug info
-glfw3.lib(egl_context.obj) : warning LNK4099: PDB 'glfw3.pdb' was not found with 'glfw3.lib(egl_context.obj)' or at 'D:\IPCA\2_ano_2_semeste\Programaçao 3D\P3D-TP\x64\Debug\glfw3.pdb'; linking object as if no debug info
+glfw3.lib(win32_thread.obj) : warning LNK4099: PDB '' was not found with 'glfw3.lib(win32_thread.obj)' or at ''; linking object as if no debug info
+glfw3.lib(win32_window.obj) : warning LNK4099: PDB '' was not found with 'glfw3.lib(win32_window.obj)' or at ''; linking object as if no debug info
+glfw3.lib(wgl_context.obj) : warning LNK4099: PDB '' was not found with 'glfw3.lib(wgl_context.obj)' or at ''; linking object as if no debug info
+glfw3.lib(egl_context.obj) : warning LNK4099: PDB '' was not found with 'glfw3.lib(egl_context.obj)' or at ''; linking object as if no debug info
 glfw3.lib(osmesa_context.obj) : warning LNK4099: PDB 'glfw3.pdb' was not found with 'glfw3.lib(osmesa_context.obj)' or at 'D:\IPCA\2_ano_2_semeste\Programaçao 3D\P3D-TP\x64\Debug\glfw3.pdb'; linking object as if no debug info
   P3D-TP.vcxproj -> D:\IPCA\2_ano_2_semeste\Programação 3D\P3D-TP\x64\Debug\P3D-TP.exe

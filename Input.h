@@ -1,9 +1,15 @@
 #include<GL/glew.h>
 #include <GLFW/glfw3.h>
 
+
 extern GLfloat rotationX;
 extern GLfloat rotationY;
 extern GLfloat ZOOM;
+extern bool animate;
+extern bool ambientLightEnabled;
+extern bool directionalLightEnabled;
+extern bool pointLightEnabled;
+extern bool spotLightEnabled;
 
 void cursorPositionCallback(GLFWwindow* window, double xPos, double yPos);
 void cursorEnterCallback(GLFWwindow* window, int entered);

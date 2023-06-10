@@ -2,34 +2,36 @@
 #include<iostream>
 #include<GL/glew.h>
 #include<GLFW/glfw3.h>
-#include<random>
 
-std::random_device rd;
-std::mt19937 gen(rd());
-std::uniform_real_distribution<> dist(0.0f, 0.9f);
 
 GLfloat rotationX = 0.0f;
 GLfloat rotationY = 0.0f;
-GLfloat ZOOM = 10.0f;
+GLfloat ZOOM = 25.0f;
 float xPosBuffer;
 float yPosBuffer;
+bool animate = false;
+
+bool ambientLightEnabled = true;
+bool directionalLightEnabled = true;
+bool pointLightEnabled = true;
+bool spotLightEnabled = true;
 
 void cursorPositionCallback(GLFWwindow* window, double xPos, double yPos)
 {
 
-    const GLfloat rotationSpeed = 0.5f;
+    const GLfloat rotationSpeed = 1.0f;
 
     if (xPos > xPosBuffer) {
-        rotationX -= rotationSpeed;
-    }
-    if (xPos < xPosBuffer) {
-        rotationX += rotationSpeed;
-    }
-    if (yPos > yPosBuffer) {
         rotationY -= rotationSpeed;
     }
-    if (yPos < yPosBuffer) {
+    if (xPos < xPosBuffer) {
         rotationY += rotationSpeed;
+    }
+    if (yPos > yPosBuffer) {
+        rotationX += rotationSpeed;
+    }
+    if (yPos < yPosBuffer) {
+        rotationX -= rotationSpeed;
     }
 
 
@@ -87,7 +89,7 @@ void scrollCallback(GLFWwindow* window, double xOffset, double yOffset)
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    //std::cout << key << std::endl;
+    std::cout << key << std::endl;
 
     const GLfloat rotationSpeed = 5;
 
@@ -108,11 +110,23 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         case GLFW_KEY_LEFT:
             rotationY -= rotationSpeed;
             break;
-        case GLFW_KEY_BACKSPACE:
-            glClearColor(dist(gen), dist(gen), dist(gen), 1.0f);
+        case GLFW_KEY_SPACE:
+            animate = true;
             break;
         case GLFW_KEY_ESCAPE:
             glfwSetWindowShouldClose(window, 1);
+            break;
+        case GLFW_KEY_1:
+            ambientLightEnabled = !ambientLightEnabled;
+            break;
+        case GLFW_KEY_2:
+            directionalLightEnabled = !directionalLightEnabled;
+            break;
+        case GLFW_KEY_3:
+            pointLightEnabled = !pointLightEnabled;
+            break;
+        case GLFW_KEY_4:
+            spotLightEnabled = !spotLightEnabled;
             break;
         }
     }

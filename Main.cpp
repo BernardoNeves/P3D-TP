@@ -96,11 +96,11 @@ void RenderLights() {
         glDisable(GL_LIGHT0);
     }
 
-   if (directionalLightEnabled) {
+    if (directionalLightEnabled) {
         glEnable(GL_LIGHT1);
 
-        GLfloat lightDirection[] = { 1.0f, 1.0f, -10.0f, 1.0f };
-        GLfloat diffuseColor[] = { 0.8f, 0.8f, 0.8f, 1.0f };
+        GLfloat lightDirection[] = { 0.0f, 0.0f, 5.0f, 1.0f };
+        GLfloat diffuseColor[] = { 1.0f,1.0f, 1.0f, 1.0f };
         GLfloat specularColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
         glLightfv(GL_LIGHT1, GL_POSITION, lightDirection);
@@ -114,7 +114,7 @@ void RenderLights() {
     if (pointLightEnabled) {
         glEnable(GL_LIGHT2);
 
-        GLfloat lightPosition[] = { 0.0f, 2.0f, -2.0f, 1.0f};
+        GLfloat lightPosition[] = { 0.0f, 2.0f, -2.0f, 1.0f };
         GLfloat diffuseColor[] = { 255.0f, 255.0f, 255.0f, 1.0f };
         GLfloat specularColor[] = { 55.0f, 55.0f, 255.0f, 1.0f };
         GLfloat constantAttenuation = 1.0f;
@@ -132,7 +132,7 @@ void RenderLights() {
         glDisable(GL_LIGHT2);
     }
 
-   if (spotLightEnabled) {
+    if (spotLightEnabled) {
         glEnable(GL_LIGHT3);
 
         GLfloat lightPosition[] = { 0.0f, 0.0f, 0.0f, 1.0f };
@@ -210,24 +210,36 @@ int main(void)
     glEnable(GL_LIGHTING);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    std::vector<glm::vec3> ballPositions;
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_real_distribution<float> dist(-20.0f, 20.0f);  // Adjust the range of random values as needed
 
     std::vector<std::pair<std::vector<Vertex>, Material>> objDataList;
+    std::vector<glm::vec3> ballPositions;
+    std::vector<GLuint> vboIDs;
+
     for (size_t i = 1; i < 16; ++i) {
-        objDataList.push_back(Read("PoolBalls/Ball" + std::to_string(i) + ".obj"));
-    }
-    for (size_t i = 0; i < objDataList.size(); ++i) {
-        const float x = dist(gen);
+        std::cout << i << std::endl;
+        //Read each obj and mtl file
+        std::pair<std::vector<Vertex>, Material> objData = Read("PoolBalls/Ball" + std::to_string(i) + ".obj");
+        objDataList.push_back(objData);
+
+        // Set Starting Position
+        const float x = dist(gen) * 2;
         const float y = dist(gen);
-        const float z = dist(gen);
         ballPositions.emplace_back(x, y, 0.0f);
 
+        // Send vertex data for each object 
+        GLuint vbo = Send(objData.first);
+        vboIDs.push_back(vbo);
     }
+    
+    //Shader Program Initialization
+    /*std::string vertexShaderCode = readShaderFile("VertexShader.glsl");
+    std::string fragmentShaderCode = readShaderFile("FragmentShader.glsl");
+    GLuint shaderProgram = createShaderProgram(vertexShaderCode, fragmentShaderCode);*/
 
-    // Main loop
+    // Rendering loop
     while (!glfwWindowShouldClose(window)) {
         // Clear the color buffer
         glfwGetFramebufferSize(window, &screenWidth, &screenHeight);
@@ -244,11 +256,20 @@ int main(void)
         glRotatef(rotationY, 0, 0, 1);
 
         RenderPoolTable(100.0f, 50.0f, 2.5f, glm::vec3(0.0f, 0.0f, 2.25f));
-
+        if (randomizePosition)
+        {
+            for (size_t i = 0; i < objDataList.size(); ++i) {
+                const float x = dist(gen) * 2;
+                const float y = dist(gen);
+                ballPositions[i]= glm::vec3(x, y, 0);
+            }
+            randomizePosition = false;
+            animate = false;
+        }
         if (animate) {
             movingBallIndex = 0;
             movingBallPosition = ballPositions[movingBallIndex];
-            movingBallDirection = glm::normalize(glm::vec3(-1.0f, -1.0f, 0.0f));
+            movingBallDirection = glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f));
 
             movingBallPosition += movingBallDirection * movingBallSpeed;
 
@@ -276,8 +297,8 @@ int main(void)
         //Render each ball
         for (size_t i = 0; i < objDataList.size(); ++i) {
             const auto& objData = objDataList[i];
-            const glm::vec3& startPosition = ballPositions[i];
-            RenderBalls(startPosition, glm::vec3(0, 0, 0), objData);
+            GLuint vbo = vboIDs[i];
+            Draw(ballPositions[i], glm::vec3(ballPositions[i].y* 45, ballPositions[i].x * 45, 0), objData, vbo/*, shaderProgram*/);
         }
         
         RenderLights();

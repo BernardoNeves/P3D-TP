@@ -8,6 +8,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+
+
 struct Material {
     std::string name;
     glm::vec3 ambient;
@@ -25,10 +27,9 @@ struct Vertex {
     glm::vec3 normal;
 };
 
-void LoadTextures(std::pair<std::vector<Vertex>, Material>& objDataList)
+void LoadTextures(std::pair<std::vector<Vertex>, Material>& objectData)
 {
-        std::pair<std::vector<Vertex>, Material>& objData = objDataList;
-        Material& material = objData.second;
+        Material& material = objectData.second;
         // Load texture image
         int width, height, channels;
         unsigned char* image = stbi_load(material.textureFile.c_str(), &width, &height, &channels, 0);
@@ -66,7 +67,6 @@ void LoadTextures(std::pair<std::vector<Vertex>, Material>& objDataList)
 std::pair<std::vector<Vertex>, Material> Read(const std::string& obj_model_filepath) {
     std::vector<Vertex> vertices;
     Material material;
-
     std::vector<glm::vec3> positions;
     std::vector<glm::vec2> texcoords;
     std::vector<glm::vec3> normals;
@@ -75,8 +75,7 @@ std::pair<std::vector<Vertex>, Material> Read(const std::string& obj_model_filep
 
     std::ifstream objFile(obj_model_filepath);
     if (!objFile) {
-        std::cerr << "Failed to open OBJ file: " << obj_model_filepath << std::endl;
-        return std::make_pair(vertices, material);
+        throw std::runtime_error("Failed to open OBJ file: " + obj_model_filepath);
     }
 
     std::string line;
@@ -115,7 +114,7 @@ std::pair<std::vector<Vertex>, Material> Read(const std::string& obj_model_filep
                 vertex.position = positions[vertexIndex - 1];
                 vertex.texcoord = texcoords[texcoordIndex - 1];
                 vertex.normal = normals[normalIndex - 1];
-                vertices.push_back(vertex);
+                vertices.emplace_back(vertex);
             }
         }
     }
@@ -124,7 +123,6 @@ std::pair<std::vector<Vertex>, Material> Read(const std::string& obj_model_filep
     std::string mtlPath = obj_model_filepath.substr(0, obj_model_filepath.find_last_of('/')) + "/" + mtlFileName;
     std::ifstream mtlFile(mtlPath);
     if (mtlFile) {
-        //Material material;
         std::string mtlLine;
         while (std::getline(mtlFile, mtlLine)) {
             std::istringstream mtlIss(mtlLine);
@@ -156,12 +154,10 @@ std::pair<std::vector<Vertex>, Material> Read(const std::string& obj_model_filep
         std::cerr << "Failed to open MTL file: " << mtlPath << std::endl;
     }
 
-    // Load textures
-    std::pair<std::vector<Vertex>, Material> objDataList;
-    objDataList = (std::make_pair(vertices, material));
-    LoadTextures(objDataList);
+    std::pair<std::vector<Vertex>, Material> objectData = std::make_pair(vertices, material);
+    LoadTextures(objectData);
 
-    return objDataList;
+    return objectData;
 }
 
 
@@ -184,12 +180,102 @@ void BindVertexArray(const GLuint vbo) {
     glTexCoordPointer(2, GL_FLOAT, sizeof(Vertex), reinterpret_cast<const GLvoid*>(offsetof(Vertex, texcoord)));
 }
 
-void RenderBalls(const glm::vec3& position, const glm::vec3& orientation, const std::pair<std::vector<Vertex>, Material>& objData) {
+GLuint Send(const std::vector<Vertex>& vertices) {
+    // Create and bind the vertex buffer object
+    GLuint vbo = CreateVertexBuffer(vertices);
+    BindVertexArray(vbo);
+
+    return vbo;
+}
+
+std::string readShaderFile(const std::string& filename) {
+    std::ifstream file(filename);
+    if (!file) {
+        std::cerr << "Failed to open file: " << filename << std::endl;
+        return "";
+    }
+
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    return buffer.str();
+}
+
+GLuint createShaderProgram(const std::string& vertexShaderCode, const std::string& fragmentShaderCode) {
+    // Create the vertex shader
+    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    const char* vertexShaderCodePtr = vertexShaderCode.c_str();
+    glShaderSource(vertexShader, 1, &vertexShaderCodePtr, nullptr);
+    glCompileShader(vertexShader);
+
+    // Check vertex shader compilation status
+    GLint vertexShaderStatus;
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &vertexShaderStatus);
+    if (vertexShaderStatus != GL_TRUE) {
+        GLint infoLogLength;
+        glGetShaderiv(vertexShader, GL_INFO_LOG_LENGTH, &infoLogLength);
+        GLchar* infoLog = new GLchar[infoLogLength];
+        glGetShaderInfoLog(vertexShader, infoLogLength, nullptr, infoLog);
+        std::cerr << "Vertex shader compilation error: " << infoLog << std::endl;
+        delete[] infoLog;
+        glDeleteShader(vertexShader);
+        return 0;
+    }
+
+    // Create the fragment shader
+    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    const char* fragmentShaderCodePtr = fragmentShaderCode.c_str();
+    glShaderSource(fragmentShader, 1, &fragmentShaderCodePtr, nullptr);
+    glCompileShader(fragmentShader);
+
+    // Check fragment shader compilation status
+    GLint fragmentShaderStatus;
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &fragmentShaderStatus);
+    if (fragmentShaderStatus != GL_TRUE) {
+        GLint infoLogLength;
+        glGetShaderiv(fragmentShader, GL_INFO_LOG_LENGTH, &infoLogLength);
+        GLchar* infoLog = new GLchar[infoLogLength];
+        glGetShaderInfoLog(fragmentShader, infoLogLength, nullptr, infoLog);
+        std::cerr << "Fragment shader compilation error: " << infoLog << std::endl;
+        delete[] infoLog;
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
+        return 0;
+    }
+
+    // Create the shader program
+    GLuint shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
+
+    // Check shader program linking status
+    GLint shaderProgramStatus;
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &shaderProgramStatus);
+    if (shaderProgramStatus != GL_TRUE) {
+        GLint infoLogLength;
+        glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, &infoLogLength);
+        GLchar* infoLog = new GLchar[infoLogLength];
+        glGetProgramInfoLog(shaderProgram, infoLogLength, nullptr, infoLog);
+        std::cerr << "Shader program linking error: " << infoLog << std::endl;
+        delete[] infoLog;
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
+        glDeleteProgram(shaderProgram);
+        return 0;
+    }
+
+    // Clean up shaders (they are now linked into the program)
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+
+    return shaderProgram;
+}
+
+void Draw(const glm::vec3& position, const glm::vec3& orientation, const std::pair<std::vector<Vertex>, Material>& objData, GLuint vbo/*, GLuint shaderProgram*/) {
     const std::vector<Vertex>& vertices = objData.first;
     const Material& material = objData.second;
 
-    // Create and bind the vertex buffer object
-    GLuint vbo = CreateVertexBuffer(vertices);
+    // Bind the existing VBO for rendering
     BindVertexArray(vbo);
 
     // Set the position and orientation of the object
@@ -201,6 +287,8 @@ void RenderBalls(const glm::vec3& position, const glm::vec3& orientation, const 
 
     // Bind the texture to the object
     glBindTexture(GL_TEXTURE_2D, material.textureID);
+
+    //Material properties TODO: Replace with Shader Program
     glMaterialfv(GL_FRONT, GL_AMBIENT, glm::value_ptr(glm::vec4(material.ambient, 1.0f)));
     glMaterialfv(GL_FRONT, GL_DIFFUSE, glm::value_ptr(glm::vec4(material.diffuse, 1.0f)));
     glMaterialfv(GL_FRONT, GL_SPECULAR, glm::value_ptr(glm::vec4(material.specular, 1.0f)));
@@ -215,10 +303,8 @@ void RenderBalls(const glm::vec3& position, const glm::vec3& orientation, const 
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     glDisableClientState(GL_NORMAL_ARRAY);
     glDisableClientState(GL_VERTEX_ARRAY);
-    glDeleteBuffers(1, &vbo);
+    //glDeleteBuffers(1, &vbo);
 
     glPopMatrix();
 }
-
-
 

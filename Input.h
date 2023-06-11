@@ -6,6 +6,7 @@ extern GLfloat rotationX;
 extern GLfloat rotationY;
 extern GLfloat ZOOM;
 extern bool animate;
+extern bool randomizePosition;
 extern bool ambientLightEnabled;
 extern bool directionalLightEnabled;
 extern bool pointLightEnabled;

@@ -10,6 +10,7 @@ GLfloat ZOOM = 5.0f;
 float xPosBuffer;
 float yPosBuffer;
 bool animate = false;
+bool randomizePosition = false;
 
 bool ambientLightEnabled = true;
 bool directionalLightEnabled = true;
@@ -89,8 +90,6 @@ void scrollCallback(GLFWwindow* window, double xOffset, double yOffset)
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    std::cout << key << std::endl;
-
     const GLfloat rotationSpeed = 5;
 
     // actions are GLFW_PRESS, GLFW_RELEASE or GLFW_REPEAT
@@ -109,6 +108,9 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
             break;
         case GLFW_KEY_LEFT:
             rotationY -= rotationSpeed;
+            break;
+        case GLFW_KEY_TAB:
+            randomizePosition = true;
             break;
         case GLFW_KEY_SPACE:
             animate = true;

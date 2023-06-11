@@ -1,4 +1,5 @@
-﻿  Input.cpp
-D:\IPCA\2_ano_2_semeste\Programação 3D\P3D-TP\Input.cpp(39,18): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-D:\IPCA\2_ano_2_semeste\Programação 3D\P3D-TP\Input.cpp(40,18): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+﻿  Main.cpp
+D:\IPCA\2_ano_2_semeste\Programação 3D\P3D-TP\Importer.h(298,50): warning C4267: 'argument': conversion from 'size_t' to 'GLsizei', possible loss of data
+D:\IPCA\2_ano_2_semeste\Programação 3D\P3D-TP\Main.cpp(253,52): warning C4244: 'argument': conversion from 'int' to 'GLfloat', possible loss of data
+D:\IPCA\2_ano_2_semeste\Programação 3D\P3D-TP\Main.cpp(253,34): warning C4244: 'argument': conversion from 'int' to 'GLfloat', possible loss of data
   P3D-TP.vcxproj -> D:\IPCA\2_ano_2_semeste\Programação 3D\P3D-TP\x64\Debug\P3D-TP.exe

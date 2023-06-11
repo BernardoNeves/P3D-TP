@@ -27,7 +27,6 @@ struct Vertex {
 
 void LoadTextures(std::pair<std::vector<Vertex>, Material>& objDataList)
 {
-    //for (auto& objData : objDataList) {
         std::pair<std::vector<Vertex>, Material>& objData = objDataList;
         Material& material = objData.second;
         // Load texture image
@@ -62,8 +61,6 @@ void LoadTextures(std::pair<std::vector<Vertex>, Material>& objDataList)
 
         // Free the image data
         stbi_image_free(image);
-        
-    //}
 }
 
 std::pair<std::vector<Vertex>, Material> Read(const std::string& obj_model_filepath) {
@@ -168,16 +165,39 @@ std::pair<std::vector<Vertex>, Material> Read(const std::string& obj_model_filep
 }
 
 
-void RenderBalls(glm::vec3 position, glm::vec3 orientation, const std::pair<std::vector<Vertex>, Material>& objData) {
+GLuint CreateVertexBuffer(const std::vector<Vertex>& vertices) {
+    GLuint vbo;
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    return vbo;
+}
+
+void BindVertexArray(const GLuint vbo) {
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glVertexPointer(3, GL_FLOAT, sizeof(Vertex), reinterpret_cast<const GLvoid*>(offsetof(Vertex, position)));
+    glEnableClientState(GL_NORMAL_ARRAY);
+    glNormalPointer(GL_FLOAT, sizeof(Vertex), reinterpret_cast<const GLvoid*>(offsetof(Vertex, normal)));
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glTexCoordPointer(2, GL_FLOAT, sizeof(Vertex), reinterpret_cast<const GLvoid*>(offsetof(Vertex, texcoord)));
+}
+
+void RenderBalls(const glm::vec3& position, const glm::vec3& orientation, const std::pair<std::vector<Vertex>, Material>& objData) {
+    const std::vector<Vertex>& vertices = objData.first;
+    const Material& material = objData.second;
+
+    // Create and bind the vertex buffer object
+    GLuint vbo = CreateVertexBuffer(vertices);
+    BindVertexArray(vbo);
+
     // Set the position and orientation of the object
     glPushMatrix();
     glTranslatef(position.x, position.y, position.z);
     glRotatef(orientation.x, 1.0f, 0.0f, 0.0f);
     glRotatef(orientation.y, 0.0f, 1.0f, 0.0f);
     glRotatef(orientation.z, 0.0f, 0.0f, 1.0f);
-
-    const std::vector<Vertex>& vertices = objData.first;
-    const Material material = objData.second;
 
     // Bind the texture to the object
     glBindTexture(GL_TEXTURE_2D, material.textureID);
@@ -186,19 +206,19 @@ void RenderBalls(glm::vec3 position, glm::vec3 orientation, const std::pair<std:
     glMaterialfv(GL_FRONT, GL_SPECULAR, glm::value_ptr(glm::vec4(material.specular, 1.0f)));
     glMaterialf(GL_FRONT, GL_SHININESS, material.shininess);
 
+    // Render the object using the vertex array object
+    glDrawArrays(GL_TRIANGLES, 0, vertices.size());
 
-    glBegin(GL_TRIANGLES);
-    // Iterate over the vertices of the object
-    for (const Vertex& vertex : vertices) {
-        // Set the normal of the vertex
-        glNormal3f(vertex.normal.x, vertex.normal.y, vertex.normal.z);
+    // Cleanup
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisableClientState(GL_NORMAL_ARRAY);
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glDeleteBuffers(1, &vbo);
 
-        // Set the texture coordinates of the vertex
-        glTexCoord2f(vertex.texcoord.x, 1 - vertex.texcoord.y);
-
-        // Draw the vertex
-        glVertex3f(vertex.position.x, vertex.position.y, vertex.position.z);
-    }
-    glEnd();
     glPopMatrix();
 }
+
+
+

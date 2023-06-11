@@ -6,7 +6,7 @@
 
 GLfloat rotationX = 0.0f;
 GLfloat rotationY = 0.0f;
-GLfloat ZOOM = 25.0f;
+GLfloat ZOOM = 5.0f;
 float xPosBuffer;
 float yPosBuffer;
 bool animate = false;
@@ -22,10 +22,10 @@ void cursorPositionCallback(GLFWwindow* window, double xPos, double yPos)
     const GLfloat rotationSpeed = 1.0f;
 
     if (xPos > xPosBuffer) {
-        rotationY -= rotationSpeed;
+        rotationY += rotationSpeed;
     }
     if (xPos < xPosBuffer) {
-        rotationY += rotationSpeed;
+        rotationY -= rotationSpeed;
     }
     if (yPos > yPosBuffer) {
         rotationX += rotationSpeed;

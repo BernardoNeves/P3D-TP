@@ -11,26 +11,23 @@
 #include "Input.h"
 #include "Importer.h"
 
-//#define STB_IMAGE_IMPLEMENTATION
-//#include "stb_image.h"
-
 #define SCREEN_WIDTH 1280
 #define SCREEN_HEIGHT 720
 #include <random>
 
-size_t movingBallIndex = 0;  // Índice da bola em movimento na lista de posições das bolas
-glm::vec3 movingBallPosition;  // Posição atual da bola em movimento
-glm::vec3 movingBallDirection;  // Direção do movimento da bola em movimento
-float movingBallSpeed = 0.25f;  // Velocidade de movimento da bola em movimento
+size_t movingBallIndex = 0;
+glm::vec3 movingBallPosition;
+glm::vec3 movingBallDirection;
+float movingBallSpeed = 0.15f;
 
 
 void RenderPoolTable(float length, float height, float depth, const glm::vec3& position)
 {
     // Material properties for the table
-    GLfloat tableAmbient[] = { 0.0f, 0.05f, 0.0f, 1.0f };  // Dark green ambient color
-    GLfloat tableDiffuse[] = { 0.1f, 0.2f, 0.1f, 1.0f };   // Dark green diffuse color
-    GLfloat tableSpecular[] = { 0.04f, 0.1f, 0.04f, 1.0f }; // Dark green specular color
-    GLfloat tableShininess = 0.078125f;                    // Adjust the shininess to control the reflection
+    GLfloat tableAmbient[] = { 0.0f, 0.05f, 0.0f, 1.0f };
+    GLfloat tableDiffuse[] = { 0.1f, 0.2f, 0.1f, 1.0f };
+    GLfloat tableSpecular[] = { 0.04f, 0.1f, 0.04f, 1.0f };
+    GLfloat tableShininess = 0.078125f;
 
     //// Set the material properties
     glMaterialfv(GL_FRONT, GL_AMBIENT, tableAmbient);
@@ -280,7 +277,7 @@ int main(void)
         for (size_t i = 0; i < objDataList.size(); ++i) {
             const auto& objData = objDataList[i];
             const glm::vec3& startPosition = ballPositions[i];
-            RenderBalls(startPosition, glm::vec3(90, 90, 90), objData);
+            RenderBalls(startPosition, glm::vec3(0, 0, 0), objData);
         }
         
         RenderLights();

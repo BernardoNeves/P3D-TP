@@ -147,14 +147,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Importer.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Importer.h" />
     <ClInclude Include="Input.h" />
-    <ClInclude Include="Main.h" />
     <ClInclude Include="stb_image.h" />
   </ItemGroup>
   <ItemGroup>

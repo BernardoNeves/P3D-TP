@@ -3,133 +3,154 @@
 #include<GL/glew.h>
 #include<GLFW/glfw3.h>
 
-
+//Global Variables
 GLfloat rotationX = 0.0f;
 GLfloat rotationY = 0.0f;
 GLfloat ZOOM = 5.0f;
 float xPosBuffer;
 float yPosBuffer;
+
 bool animate = false;
 bool randomizePosition = false;
 
-bool ambientLightEnabled = true;
-bool directionalLightEnabled = true;
-bool pointLightEnabled = true;
-bool spotLightEnabled = true;
+bool ambientLightEnable = true;
+bool directionalLightEnable = true;
+bool pointLightEnable = true;
+bool spotLightEnable = true;
 
-void cursorPositionCallback(GLFWwindow* window, double xPos, double yPos)
-{
+/**
+ * @brief CursorPositionCallback - Checks were the mouse is compared to before, and if it changes, Rotates the View
+ *
+ * @param Window : Program's Window
+ * @param xPos : Position of the Mouse on the X-Axis
+ * @param yPos : Position of the Mouse on the Y-Axis
+ * @return : Void
+ */
+void cursorPositionCallback(GLFWwindow* window, double xPos, double yPos) {
 
+    //The Rotation Speed that will be aplicated in the Rotation
     const GLfloat rotationSpeed = 1.0f;
 
+    //Checks the Position of the Mouse Compared to the Buffer Position
     if (xPos > xPosBuffer) {
         rotationY += rotationSpeed;
     }
-    if (xPos < xPosBuffer) {
+    else if (xPos < xPosBuffer) {
         rotationY -= rotationSpeed;
     }
     if (yPos > yPosBuffer) {
         rotationX += rotationSpeed;
     }
-    if (yPos < yPosBuffer) {
+    else if (yPos < yPosBuffer) {
         rotationX -= rotationSpeed;
     }
 
-
-    std::cout << xPos << "  :  " << yPos << std::endl;
+    //Changes the Buffer to the Current Position
     xPosBuffer = xPos;
     yPosBuffer = yPos;
 }
 
-void cursorEnterCallback(GLFWwindow* window, int entered)
-{
-    if (entered) {
-        std::cout << "Entered Windowed" << std::endl;
-    } else {
-        std::cout << "Left Window" << std::endl;
-    }
-}
-
-void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
-{
-    if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
-        std::cout << "Right button pressed" << std::endl;
-    }
-    if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE) {
-        std::cout << "Right button released" << std::endl;
-    }
-
-    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-        std::cout << "Left button pressed" << std::endl;
-    }
-    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE) {
-        std::cout << "Left button released" << std::endl;
-    }
-
-	if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_PRESS) {
-		std::cout << "Middle button pressed" << std::endl;
-	}
-	if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_RELEASE) {
-		std::cout << "Middle button released" << std::endl;
-	}
-}
-
+/**
+ * @brief ScrollCallback - Checks if the Scroll, and Zooms if Used
+ *
+ * @param Window : Program's Window
+ * @param xOffSet : The Scroll is moved in the X-Axis
+ * @param yOffSet : The Scroll is moved in the Y-Axis
+ * @return : Void
+ */
 void scrollCallback(GLFWwindow* window, double xOffset, double yOffset)
 {
-    std::cout << xOffset << "  :  " << yOffset << std::endl;
-
-    if (yOffset == 1) {
-        ZOOM += fabs(ZOOM) * 0.1f;
-    } else if (yOffset == -1) {
-        ZOOM -= fabs(ZOOM) * 0.1f;
-    }
-
-    std::cout << "ZOOM = " << ZOOM << std::endl;
-
+    //Changes the Zoom if the yOffSet Changes 
+    ZOOM += fabs(ZOOM) * yOffset * 0.1f;
 }
 
+/**
+ * @brief KeyCallBack - Checks if Keys are Pressed 
+ *
+ * @param Window : Program's Window
+ * @param Key : The Key that needs to be Checked
+ * @param ScanCode : The System-Specific Scancode of the Key
+ * @param Action : The Action applied to the Key
+ * @param Mods : Which Modifier Keys were Held Down
+ * @return : Void
+ */
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+	//The Rotation Speed that will be aplicated in the Rotation
     const GLfloat rotationSpeed = 5;
 
-    // actions are GLFW_PRESS, GLFW_RELEASE or GLFW_REPEAT
+    /*Actions are GLFW_PRESS (If the Key is Pressed), 
+                  GLFW_RELEASE (If the Key is Released), 
+                  GLFW_REPEAT (If the Key is being Repeated)*/
     if (action == GLFW_PRESS || action == GLFW_REPEAT)
     {
         switch (key)
         {
         case GLFW_KEY_UP:
+            //If the Key Pressed is Up, the View is Rotated in the X-Axis
             rotationX -= rotationSpeed;
             break;
         case GLFW_KEY_DOWN:
+			//If the Key Pressed is Down, the View is Rotated in the X-Axis
             rotationX += rotationSpeed;
             break;
         case GLFW_KEY_RIGHT:
+            //If the Key Pressed is Right, the View is Rotated in the Y-Axis
             rotationY += rotationSpeed;
             break;
         case GLFW_KEY_LEFT:
+			//If the Key Pressed is Left, the View is Rotated in the Y-Axis
             rotationY -= rotationSpeed;
             break;
         case GLFW_KEY_TAB:
+			//If the Key Pressed is Tab, the Position of the Balls is Changed
             randomizePosition = true;
             break;
         case GLFW_KEY_SPACE:
+			//If the Key Pressed is Space, the Animation Starts
             animate = true;
             break;
         case GLFW_KEY_ESCAPE:
+            //If the Key Pressed is Escape the Window is Closed
             glfwSetWindowShouldClose(window, 1);
             break;
         case GLFW_KEY_1:
-            ambientLightEnabled = !ambientLightEnabled;
+			//If the Key Pressed is One, The Light is Changed to Ambient Light
+            ambientLightEnable = !ambientLightEnable;
             break;
         case GLFW_KEY_2:
-            directionalLightEnabled = !directionalLightEnabled;
+			//If the Key Pressed is Two, The Light is Changed to Directional Light
+            directionalLightEnable = !directionalLightEnable;
             break;
         case GLFW_KEY_3:
-            pointLightEnabled = !pointLightEnabled;
+			//If the Key Pressed is Three, The Light is Changed to Point Light
+            pointLightEnable = !pointLightEnable;
             break;
         case GLFW_KEY_4:
-            spotLightEnabled = !spotLightEnabled;
+			//If the Key Pressed is Four, The Light is Changed to Spot Light
+            spotLightEnable = !spotLightEnable;
             break;
         }
     }
+}
+
+/**
+ * @brief InputEnable - Input Enable the Inputs Needed in the Program
+ *
+ * @param Window : Program's Window
+ * @return : Void
+ */
+void InputEnable(GLFWwindow* window) {
+
+    //Sets the Position of the Cursor
+    glfwSetCursorPosCallback(window, cursorPositionCallback);
+    
+    //Sets the Key CallBack
+    glfwSetKeyCallback(window, keyCallback);
+    
+    //Sets an Input Option for the Specified Window
+    glfwSetInputMode(window, GLFW_STICKY_KEYS, 1);
+    
+    //Sets the Scroll CallBack
+    glfwSetScrollCallback(window, scrollCallback);
 }
